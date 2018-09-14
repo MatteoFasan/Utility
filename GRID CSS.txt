@@ -1,0 +1,271 @@
+Es di codice (to Start):
+
+##############
+<div class="container">
+  <div class="item item-1"></div>
+  <div class="item item-2"></div>
+  <div class="item item-3"></div>
+</div>
+##############
+
+___________________________________________________________________________________
+
+TERMINOLOGIA:
+
+'column grid line' or 'row grid line' : è la riga che separa due blocchi del 'grid',
+a seconda sia orrizzontale 'row grid line', oppure verticale 'column grid line';
+
+'grid track': è il numero di  blocchi presenti fra 2 'grid line';
+
+|	|	|
+|	|	|
+---------
+|XXX|XXX|
+|XXX|XXX|
+
+'grid cell': è il singolo blocco;
+
+'grid area': è compreso fra due 'grid line' e due 'grid column'
+
+___________________________________________________________________________________
+
+CSS:
+
+1- Crea la griglia e sotto griglie nei vari singoli blocchi
+
+.container {
+  display: grid | inline-grid;
+}
+
+2- Possiamo definire le varie 'column/row grid line' e il loro spazio
+
+.container {
+  grid-template-columns: [first] 40px [line2] 50px [line3] auto [col4-start] 50px [five] 40px [end];
+  grid-template-rows: [row1-start] 25% [row1-end] 100px [third-line] auto [last-line];
+}
+
+2.1- Un altro esempio con le percentuali
+
+.container {
+  grid-template-rows: [row1-start] 25% [row1-end row2-start] 25% [row2-end];
+}
+
+2.2- Un altro esempio con un 'ripetitore'
+[repeat('quante volte','spazio','nome')]
+
+.container {
+  grid-template-columns: repeat(3, 20px [col-start]);
+}
+
+2.3- Equivalente con il punto 2.2
+
+.container {
+  grid-template-columns: 20px [col-start] 20px [col-start] 20px [col-start];
+}
+
+2.3.1- Per andarlo a posizionare
+
+.item {
+  grid-column-start: col-start 2;
+}
+
+2.4- Possiamo utilizzare la keyword 'fr', utilizzata per gestire lo spazio disponibile in maniera automatica
+
+.container {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.container {
+  grid-template-columns: 1fr 50px 1fr 1fr;
+}
+
+3- Posizionare il figlio all'interno del blocco 
+
+.item-a {
+  grid-column-start: 2;
+  grid-column-end: five;
+  grid-row-start: row1-start
+  grid-row-end: 3;
+}
+
+3.1- Equivale al punto 3, soltanto che con lo / indichi la seconda parte cioè il column
+[row/column]
+
+item-c {
+  grid-column: 3 / span 2;
+  grid-row: third-line / 4;
+}
+
+3.2- Un altro modo di scrivere:
+[grid-row-start / grid-column-start / grid-row-end / grid-column-end]
+
+.item-d {
+  grid-area: 1 / col4-start / last-line / 6
+}
+
+4- Grid template
+[.], indica che il blocco verrà occupato da uno spazio vuoto
+
+.item-a {
+  grid-area: header;
+}
+.item-b {
+  grid-area: main;
+}
+.item-c {
+  grid-area: sidebar;
+}
+.item-d {
+  grid-area: footer;
+}
+
+.container {
+  grid-template-columns: 50px 50px 50px 50px;
+  grid-template-rows: auto;
+  grid-template-areas: 
+    "header header header header"
+    "main main . sidebar"
+    "footer footer footer footer";
+}
+
+5- Allineamento degli items all'interno dei blocchi (con riferimento la riga)
+
+.item {
+  justify-self: start | end | center | stretch;
+} 
+
+5.1- Allineamento degli items all'interno dei blocchi (con riferimento la colonna)
+
+.item {
+  align-self: start | end | center | stretch;
+}
+
+6- Definizione del grid template in maniera ristretta
+
+.container {
+  grid-template:
+    [row1-start] "header header header" 25px [row1-end]
+    [row2-start] "footer footer footer" 25px [row2-end]
+    / auto 50px auto;
+}
+
+7- Spazio (span) fra le varie colonne e righe
+
+.container {
+  grid-column-gap: 10px;
+  grid-row-gap: 15px;
+  grid-gap: 15px 10px;
+}
+
+8- Allineamento dei vari blocchi all'interno del grid principale (con riferimento alla riga)
+
+.container {
+  justify-items: start | end | center | stretch;
+}
+
+8.1- Allineamento dei vari blocchi all'interno del grid principale (con riferimento alla colonna)
+
+.container {
+  align-items: start | end | center | stretch;
+}
+
+9- Allineamento della griglia principale all'interno della pagina web (con riferimento alla riga)
+
+.container {
+  justify-content: start | end | center | stretch | space-around | space-between | space-evenly;	
+}
+
+9.1- Allineamento della griglia principale all'interno della pagina web (con riferimento alla colonna)
+
+.container {
+  align-content: start | end | center | stretch | space-around | space-between | space-evenly;	
+}
+
+10- Viene utilizzato per spaziare le colonne con spazi uguali da 60px, cosi facendo possiamo definire,
+la posizione dei altri sotto blocchi e ridimensionare il grid princiale 
+
+.item-a {
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+}
+.item-b {
+  grid-column: 5 / 6;
+  grid-row: 2 / 3;
+}
+
+.container {
+  grid-auto-columns: 60px;
+}
+
+11- Viene utilizzato per auto-posizionamento dei vari sotto blocchi all'interno del grid princiale,
+se alcuni items non vengono definiti la loro posizione, ci pensa 'grid-auto-flow' ad inserirli, a seconda
+si sceglie 'row' o 'column', verranno inseriti in modo differente 
+
+[dense] questa keyword influisce solamente sull'ordine di come vengono inserite gli items,
+		per ottimizzare gli spazi lasciati
+
+.container {
+  grid-auto-flow: row | column | row dense | column dense
+}
+
+12- Alcuni esempi di codice veloci equivalenti
+
+###################################
+
+.container {
+    grid: 100px 300px / 3fr 1fr;
+  }
+  
+   ||
+   \/ 
+   
+.container {
+    grid-template-rows: 100px 300px;
+    grid-template-columns: 3fr 1fr;
+ }
+ 
+####################################
+
+.container {
+    grid: auto-flow / 200px 1fr;
+  }
+    
+   ||
+   \/ 
+   
+  .container {
+    grid-auto-flow: row;
+    grid-template-columns: 200px 1fr;
+  }
+  
+####################################
+
+.container {
+    grid: auto-flow dense 100px / 1fr 2fr;
+  }
+     
+   ||
+   \/
+   
+ .container {
+    grid-auto-flow: row dense;
+    grid-auto-rows: 100px;
+    grid-template-columns: 1fr 2fr;
+  } 
+  
+####################################
+
+.container {
+    grid: 100px 300px / auto-flow 200px;
+  }
+       
+   ||
+   \/
+   
+ .container {
+    grid-template-rows: 100px 300px;
+    grid-auto-flow: column;
+    grid-auto-columns: 200px;
+  }
+  
+####################################
