@@ -1,0 +1,18 @@
+Nel caso in cui, nel css abbiamo sia una classe css e un id css, quello che vince fra i due nel 
+caso ci sia una sovrapposizione di stili vince l'id
+Es: 
+<style>
+	
+	#header_id {
+		color:#fff
+	}
+	
+	.header_class {
+		color:#000
+	}
+
+</style>
+
+<div id="header_id" class="header_class">Text</div>
+
+In questo caso il colore della parola 'Text', sarà colorata di bianco
