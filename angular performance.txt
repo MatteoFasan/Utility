@@ -1,0 +1,2 @@
+Per velocizzare l'esecuzione di angular è meglio farla partire con prompt dei comandi
+esterno
