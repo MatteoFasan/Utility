@@ -1,0 +1,39 @@
+1 - Creare all'interno della cartella 'static', la pagina web da fare visualizzare nel caso di un determinato errore:
+	Es: 
+		Errore: 401 -> 'valore di ritorno del metodo della classe handler'.html (In questo esempio la classe si chiama MyErrorController.java,
+																				 e il valore di ritorno sarà error-401)
+		
+		
+2 - Creare la classe dell'handler, per catch dell'errore
+
+@Controller
+public class MyErrorController implements ErrorController  {
+ 
+	private static final String PATH = "/error";
+	private static final String ERRORE = "error";
+	private static final Strin  ERRORE401 = "error-401";
+	
+    @RequestMapping("/error")
+    public String handleError(HttpServletRequest request) {
+    	Object status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
+        
+        if (status != null) {
+            Integer statusCode = Integer.valueOf(status.toString());
+         
+            if(statusCode == HttpStatus.UNAUTHORIZED.value()) {
+                return ERRORE401;
+            }
+        }
+        
+        return ERRORE;
+    }
+
+	@Override
+	public String getErrorPath() {
+		
+		return PATH;
+	}
+	
+
+ 
+}
