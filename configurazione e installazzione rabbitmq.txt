@@ -1,0 +1,259 @@
+INSTALLAZIONE
+
+Nella cartella condivisa su nas, è presente i due eseguibili per fare partire l'installazzione 
+
+###################################################################################################################à
+
+CONFIGURAZIONE RABBITMQ (INSERIMENTO NELLA CODA)
+
+1 - Creare una interfaccia, che verrà utilizzata per inserire all'interno di una coda le varie informazioni, (rispettare i vari nomi dei package)
+	Es:
+	
+	package becube.ddom.ia.infografica.listener;
+
+	import org.springframework.cloud.stream.annotation.Output;
+	import org.springframework.messaging.MessageChannel;
+
+	public interface MessageSources {
+
+		String OUTPUT = "document_creator_bps"; // dovrà essere uguale al nome  nel .yml
+
+		@Output(OUTPUT)
+		MessageChannel output();
+
+	}
+	
+	CONFIG.YML
+	
+	cloud:
+      stream:
+        bindings:
+		 document_creator_bps:
+          destination: document-bps-creator${environment.suffix:} // anche queste due informazioni dovranno essere uguali anche nella coda di output
+          input-group: document-bps-creator${environment.suffix:}
+		  
+2 - Creare il nostro event listener
+
+	package becube.ddom.ia.infografica.listener;
+
+	import org.springframework.beans.factory.annotation.Autowired;
+	import org.springframework.cloud.stream.annotation.EnableBinding;
+	import org.springframework.context.event.EventListener;
+	import org.springframework.integration.support.MessageBuilder;
+	import org.springframework.stereotype.Service;
+
+	import becube.ddom.ia.api.client.bps.infografica.InfograficaBpsData;
+	import becube.ddom.ia.infografica.event.NewInfograficaEvent;
+	import lombok.extern.slf4j.Slf4j;
+
+	@Service
+	@EnableBinding(MessageSources.class)
+	@Slf4j
+	public class NewInfograficaEventListener {
+	private MessageSources source;
+
+	@Autowired
+	public NewInfograficaEventListener(MessageSources source) {
+		this.source = source;
+	}
+
+	@EventListener
+	void onNewPoll(NewInfograficaEvent event) {
+
+		log.debug("onNewPoll listener: ricevuto evento NewInfograficaEvent");
+
+		// Invio l'evento al servizio per la creazione dell'infografica
+		InfograficaBpsData infoBps = new InfograficaBpsData();
+		infoBps.setContent(event.getContent());
+		infoBps.setDocumentId(event.getDocumentId());
+		infoBps.setIndentityId(event.getIdentityId());
+		infoBps.setNomeFile(event.getNomeFile());
+
+		source.output().send(MessageBuilder.withPayload(infoBps).build());
+		log.debug("Inviato messaggio sulla coda {}", MessageSources.OUTPUT);
+
+	}
+	
+}
+
+3 - Di buon uso bisogna creare il model dedicato da passare all'event listener
+
+	package becube.ddom.ia.infografica.event;
+
+	import lombok.Data;
+	import lombok.NoArgsConstructor;
+
+	@Data
+	@NoArgsConstructor
+	public class NewInfograficaEvent {
+
+		private static final long serialVersionUID = 1L;
+		private int documentId;
+		private int identityId;
+		private String nomeFile;
+		private int content;
+	}
+
+4 - Nella classe dove generalmente avviene le varie logiche ( dove nel nome compare la parola 'Service' ), bisogna inserire questo
+	nella definizioni delle variabili
+	
+	// == Event publisher ========================
+	private ApplicationEventPublisher eventPublisher;
+
+	@Autowired
+	MessageSources notificationMessageSources;
+
+	@Override
+	public void setApplicationEventPublisher(ApplicationEventPublisher eventPublisher) {
+		this.eventPublisher = eventPublisher;
+
+	}
+
+	protected void publish(ApplicationEvent event) {
+		if (eventPublisher != null) {
+			eventPublisher.publishEvent(event);
+		}
+	}
+	// ==END Event publisher =====================
+
+
+5 - Infine il metodo che manda l'oggetto sulla coda
+
+	public Boolean sendInfografica(int identityId, int documentId, String nameFile, int content) {
+
+		log.info("Processo di creazione dell'infografica iniziato");
+
+		
+		NewInfograficaEvent event = new NewInfograficaEvent();
+		event.setContent(content);
+		event.setDocumentId(documentId);
+		event.setIdentityId(identityId);
+		event.setNomeFile(nameFile);
+		
+		this.eventPublisher.publishEvent(event);
+		log.info("Inviato evento di creazione dell'infografica completato");
+
+		// Richiesta document composition e salvataggio risultato nel content del documento
+
+		log.info("Processo di completamento infografica comletato");
+		return true;
+
+	}
+
+#################################################################################################################
+
+
+CONFIGURAZIONE RABBITMQ (ESTRAZIONE DALLA CODA)
+
+1 - Creare una interfaccia
+
+	package becube.ddom.bps.broker;
+
+	import org.springframework.cloud.stream.annotation.Input;
+	import org.springframework.messaging.SubscribableChannel;
+
+	public interface MessageSources {
+
+		String INPUT = "broker_document_bps_creator";
+		
+		@Input(MessageSources.INPUT)
+		SubscribableChannel input();
+
+	}
+
+	
+	
+	CONFIG.YML
+	
+	spring:
+	  cloud:
+		stream:
+		  bindings:
+			broker_document_bps_creator:
+			  destination: document-bps-creator${environment.suffix:} // il nome deve essere IDENTITICO al nome inserito nella coda di input
+			  input-group: document-bps-creator${environment.suffix:}
+
+2 - Infine bisogna creare il 'broker' per leggere i vari messaggi all'interno della coda
+
+	package becube.ddom.bps.broker;
+
+	import org.springframework.beans.factory.annotation.Autowired;
+	import org.springframework.cloud.stream.annotation.EnableBinding;
+	import org.springframework.cloud.stream.annotation.StreamListener;
+
+	import becube.ddom.bps.Infografica.CreateInfographicBps;
+	import becube.ddom.bps.Infografica.InfograficaBpsDTO;
+	import becube.ddom.bps.common.MarshallJson;
+	import becube.ddom.bps.common.MygdiApiService;
+	import becube.ddom.ia.api.client.bps.infografica.InfograficaBpsData;
+	import lombok.extern.slf4j.Slf4j;
+
+
+
+	@EnableBinding(MessageSources.class)
+	@Slf4j
+	public class BrokerListener {
+
+
+		@Autowired
+		private CreateInfographicBps infoBps;
+
+		@Autowired
+		private MarshallJson buildJson;
+
+		@Autowired
+		private MygdiApiService myGdi;
+
+		private MessageSources source;
+
+		@Autowired
+		public BrokerListener(MessageSources source) {
+			this.source = source;
+		}
+
+		@StreamListener(MessageSources.INPUT)
+		public void onMessageReceived(InfograficaBpsData message) {
+
+			on(message);
+
+
+		}
+		void on(InfograficaBpsData payload) {
+			try {
+				log.info("Ricevuto oggetto dalla coda InfograficaBpsData con documentId: {}, identityId: {}, content: {}, nome file: {}", payload.getDocumentId(),payload.getIndentityId(),payload.getContent(),payload.getNomeFile());
+
+				InfograficaBpsDTO bpsDTO = buildJson.marshalJsonToInfografica(payload.getDocumentId());
+				byte[] fileInfografica = infoBps.createInfografica(bpsDTO.getTitolo(),bpsDTO.getDescrizioneAziendale(), bpsDTO.getNomeAziendale(), bpsDTO.getMapBlockRisorse(), bpsDTO.getMapBlockCapacita(), bpsDTO.getMapBlockAmbienteSpecifico(), bpsDTO.getMapBlockAmbienteGenerale());
+				myGdi.replaceDocumentContentInApi(payload.getIndentityId(), payload.getDocumentId(), payload.getContent(), fileInfografica, "infografica.png");
+
+				log.trace("Creazione dell'infografica creata con successo, document id: {}", payload.getDocumentId());
+
+			} catch (Exception ex) {
+				log.error("Errore durante la creazione dell'infografica",ex);
+			}
+		}
+
+	}
+
+	
+3 - L'oggetto di ritorno della coda di output (InfograficaBpsData) dovrà essere uguale, all'oggetto inserito nella coda di input
+
+	package becube.ddom.ia.api.client.bps.infografica;
+
+	import becube.ddom.ia.api.client.poll.PollCreatedEvent;
+	import becube.ddom.ia.api.client.poll.PollType;
+	import becube.ddom.ia.api.client.poll.PollCreatedEvent.PollCreatedEventBuilder;
+	import lombok.Builder;
+	import lombok.Data;
+	import lombok.NoArgsConstructor;
+
+	@Data
+	@NoArgsConstructor
+
+	public class InfograficaBpsData {
+
+		private int documentId;
+		private int indentityId;
+		private int content;
+		private String nomeFile;
+	}
