@@ -1,0 +1,165 @@
+Angular - NGXS
+
+Bisogna aggiungere al progetto dove si vuole utilizzare la tecnologia 'ngxs' :
+- > ' npm add @ngxs/store '
+
+Se si vuole utilizzare il plugin del logger e/o devtools :
+- > ' npm add @ngxs/logger-plugin @ngxs/devtools-plugin --dev'
+
+#############################################################################
+
+DEFINIZIONE DEL MODEL
+
+export interface Tutorial {
+    name: string;
+    url: string;
+}
+
+############################################################################
+
+DEFINIZIONE 'ACTIONS'
+
+Le varie actions andranno messe all'interno di un file loro personale
+
+Nella generazione della classe di action bisogna inserire il 'type' (il lavoro che deve fare la classe)
+	Es: stati readonly type = "[TUTORIAL] Remove";
+	TIP: Il nome della classe si dovrà chiamare '<nome.actions.ts>'
+
+	import { Tutorial } from './../models/tutorial.model'
+
+	export class AddTutorial {
+		static readonly type = '[TUTORIAL] Add'
+
+		constructor(public payload: Tutorial) {}
+	}
+
+	export class RemoveTutorial {
+		static readonly type = '[TUTORIAL] Remove'
+
+		constructor(public payload: string) {}
+	}
+#############################################################################à
+	
+DEFINIZIONE 'STATES'
+
+	// Section 1
+	import { State, Action, StateContext, Selector } from '@ngxs/store';
+	import { Tutorial } from './../models/tutorial.model'
+	import { AddTutorial, RemoveTutorial } from './../actions/tutorial.actions'
+
+	// Section 2
+	export class TutorialStateModel {
+		tutorials: Tutorial[];
+	}
+
+	// Section 3 -- Utilizzata per definire il nome e il valore di default
+	@State<TutorialStateModel>({
+		name: 'tutorials',
+		defaults: {
+			tutorials: []
+		}
+	})
+	
+export class TutorialState {
+
+	/* 	Attraverso @Selector ci permette di creare funzioni che ritornano, 
+		uno specifico elemento oppure tutti gli elementi per determinati filtri */
+	
+    @Selector()
+    static getTutorials(state: TutorialStateModel) {
+        return state.tutorials
+    }
+
+	/*	Attraverso @Action() nel suo interno possiamo inserire le varie azioni che abbiamo definito prima,
+		molto importante e anche se non obbligatoro il payload.
+		getState() serve per estrarre l'oggetto precedentemente definito con @State
+		patchState() or setState() serve per rieditare,modificare l'oggetto passato con @State (sarebbe il parametro di uscita, passato per rif) */
+		
+    @Action(AddTutorial) // il nome della classe dell'azione precedentemente creata
+    add({getState, patchState }: StateContext<TutorialStateModel>, { payload }:AddTutorial) {
+        const state = getState();
+        patchState({
+            tutorials: [...state.tutorials, payload]
+        })
+    }
+
+    @Action(RemoveTutorial)
+    remove({getState, patchState }: StateContext<TutorialStateModel>, { payload }:RemoveTutorial) {
+        patchState({
+            tutorials: getState().tutorials.filter(a => a.name != payload)
+        })
+    }
+}
+
+##############################################################################################
+
+Nell'App.module nei import bisogna inserire:
+
+  imports: [
+    BrowserModule,
+    NgxsModule.forRoot([
+      TutorialState
+    ]),
+    NgxsReduxDevtoolsPluginModule.forRoot(),
+    NgxsLoggerPluginModule.forRoot()
+  ]
+  
+#####################################################################################
+
+Metodo di aggiunta, con 'dispatch' nel nostro caso richiamerà il metodo di aggiunta
+
+import { Component, OnInit } from '@angular/core';
+import { Store } from '@ngxs/store';
+import { AddTutorial } from './../actions/tutorial.actions'
+
+@Component({
+  // props removed for brevity
+})
+export class CreateComponent implements OnInit {
+
+  constructor(private store: Store) { }
+
+  addTutorial(name, url) {
+    this.store.dispatch(new AddTutorial({name: name, url: url})) // a seconda dell'oggetto passato all'interno del dispatch
+																 // ngxs richiamerà un metodo oppure l'altro.
+  }
+
+  ngOnInit() {
+  }
+
+}
+
+###################################################################################
+
+Metodo di lettura e rimuovi elemento
+
+import { Component, OnInit } from '@angular/core';
+import { Store, Select } from '@ngxs/store';
+import { Tutorial } from './../models/tutorial.model'
+import { TutorialState } from './../state/tutorial.state' // We will use this shortly
+import { Observable } from 'rxjs/Observable'
+import { RemoveTutorial } from './../actions/tutorial.actions'
+
+@Component({}) // Removed for brevity
+
+export class ReadComponent implements OnInit {
+
+  tutorials$: Observable<Tutorial>
+
+  constructor(private store: Store) {
+      this.tutorials$ = this.store.select(state => state.tutorials.tutorials) // state.'nome dellos state'.'attributi'
+  }
+
+  delTutorial(name) {
+    this.store.dispatch(new RemoveTutorial(name))
+  }
+
+  ngOnInit() {}
+
+}
+
+###############################################################ààà
+
+Oppure nella lettura si può scrivere cosi:
+
+ @Select(TutorialState.getTutorials) tutorials$: Observable<Tutorial>
