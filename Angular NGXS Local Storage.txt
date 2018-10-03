@@ -158,8 +158,13 @@ export class ReadComponent implements OnInit {
 
 }
 
-###############################################################ààà
+###############################################################
 
 Oppure nella lettura si può scrivere cosi:
 
  @Select(TutorialState.getTutorials) tutorials$: Observable<Tutorial>
+ 
+ 
+#######################################################
+
+Per vedere un esempio sempre su GIT nella 'cartella' UTILITY, c'è un esempio di progetto chiamato Ngxs esempio
