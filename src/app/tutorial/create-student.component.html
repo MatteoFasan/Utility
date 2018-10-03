@@ -1,0 +1,21 @@
+<div>
+  Aggiunta studenti<br>
+  Nome: <input type="text" value="Mickey" #nomeAdd><br>
+  Cognome: <input type="text" value="Mouse" #cognomeAdd><br>
+  <input type="button" (click)="addStudente(nomeAdd.value,cognomeAdd.value)" value="invia">
+</div>
+
+<div style="margin-top: 50px;">
+  Elimina<br>
+  Cognome: <input type="text" value="Mouse" #cognomeEl><br>
+  <input type="button" (click)="removeStudente(cognomeEl.value)" value="invia">
+</div>
+
+
+<div style="margin-top: 50px;">
+  Modifica<br>
+  Nome: <input type="text" value="Mickey" #nomeMod><br>
+  Cognome: <input type="text" value="Mouse" #cognomeMod><br>
+  Cognome dell'alunno da modificare: <input type="text" value="Mouse" #cognomeAlunnoMod><br>
+  <input type="button" (click)="modifyStudente(nomeMod.value,cognomeMod.value,cognomeAlunnoMod.value)" value="invia">
+</div>
