@@ -1,0 +1,47 @@
+TDD ( test-driven development )
+
+Sarebbe lo sviluppo del codice per i test che a loro volta testeranno il codice scritto da noi.
+Questa tipologia di sviluppo può essere sia positiva oppure negativa, perchè bisognerà spendere 
+dell'altro tempo per implementare il codice del test.
+Su progetti piccoli non è molto utile, ma sconsigliato; invece su progetti grandi, che sono impiedi da
+molti anni è consigliato utilizzarli per evitare brutte sorprese bug catastrofici una volta andati in 
+produzione. Ci sono diversi tipi di test: unit, integration, end-to-end
+
+Unit test: sono dei test sullo specifico componente dell'applicazione, quest'ultimo viene testato in maniera separata da
+tutto il meccanismo del progetto
+
+Integration test: testano il componente con altre risorse esterne per esempio: dipendenze, injection, template
+
+End-to-end: testano l'insieme dell'applicazione come se fosse un utente finale
+
+In angular i file adibiti per il test, vengono denominati .spec.ts,
+Al suo interno è presente il 'describe' che rappresenta il nome del componente dove andare a testare le applicazioni
+e 'it' che indica il nome del singolo test da implementare
+
+
+describe('ValueService', () => {
+  let service: ValueService;
+  beforeEach(() => { service = new ValueService(); });
+ 
+  it('#getValue should return real value', () => {
+    expect(service.getValue()).toBe('real value');
+  });
+ 
+  it('#getObservableValue should return value from observable',
+    (done: DoneFn) => {
+    service.getObservableValue().subscribe(value => {
+      expect(value).toBe('observable value');
+      done();
+    });
+  });
+ 
+  it('#getPromiseValue should return value from a promise',
+    (done: DoneFn) => {
+    service.getPromiseValue().then(value => {
+      expect(value).toBe('promise value');
+      done();
+    });
+  });
+});
+
+Link per il video, dove ho tratto queste informazioni: https://www.youtube.com/watch?v=yG4FH60fhUE&list=PLTjRvDozrdlz_mpTxWVOxF8oVwx0gX9ei&index=2
